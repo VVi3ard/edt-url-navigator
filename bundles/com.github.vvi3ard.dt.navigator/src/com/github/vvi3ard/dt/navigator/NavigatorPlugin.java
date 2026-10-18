@@ -1,4 +1,4 @@
-﻿package com.github.vvi3ard.dt.navigator;
+package com.github.vvi3ard.dt.navigator;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,8 +25,6 @@ public class NavigatorPlugin extends AbstractUIPlugin {
     public void start(BundleContext context) throws Exception {
         super.start(context);
         plugin = this;
-
-        getConfigDir(); // Ensure directory exists
 
         startServerIfNeeded();
     }

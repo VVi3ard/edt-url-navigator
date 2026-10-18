@@ -8,7 +8,7 @@
   <parent>
     <groupId>com.github.vvi3ard.dt.navigator</groupId>
     <artifactId>repositories</artifactId>
-    <version>1.3.0-SNAPSHOT</version>
+    <version>1.4.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>com.github.vvi3ard.dt.navigator.repository</artifactId>
