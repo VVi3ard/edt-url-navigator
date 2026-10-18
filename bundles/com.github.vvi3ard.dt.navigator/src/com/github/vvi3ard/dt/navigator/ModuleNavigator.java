@@ -22,6 +22,9 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IEditorPart;
@@ -134,7 +137,7 @@ public final class ModuleNavigator {
             }
 
             if (editor != null) {
-                positionInEditor(editor, target);
+                positionInEditor(window, editor, target);
             }
 
             bringToFront(window.getShell());
@@ -657,11 +660,15 @@ public final class ModuleNavigator {
         return new File(loc.toFile(), "src").isDirectory();
     }
 
-    private static void positionInEditor(IEditorPart editor, NavigationTarget target) {
-        if (!(editor instanceof ITextEditor)) {
-            return;
+    private static void positionInEditor(IWorkbenchWindow window, IEditorPart editor, NavigationTarget target) {
+        if (editor instanceof ITextEditor) {
+            positionInTextEditor((ITextEditor) editor, target);
+        } else {
+            positionInMetadataEditor(window, editor, target);
         }
-        ITextEditor textEditor = (ITextEditor) editor;
+    }
+
+    private static void positionInTextEditor(ITextEditor textEditor, NavigationTarget target) {
         IDocumentProvider provider = textEditor.getDocumentProvider();
         if (provider == null) {
             return;
@@ -690,7 +697,7 @@ public final class ModuleNavigator {
             }
         }
 
-        // 2. Attribute search
+        // 2. Attribute search in XML/text
         if (target.attr != null && !target.attr.isBlank()) {
             String attrName = target.attr.trim();
             Pattern p = Pattern.compile("<name>[ \\t]*" + Pattern.quote(attrName) + "[ \\t]*</name>", Pattern.CASE_INSENSITIVE);
@@ -718,8 +725,220 @@ public final class ModuleNavigator {
 
         // 4. Fallback to line
         if (target.line > 0) {
-            goToLine(editor, target.line);
+            goToLine(textEditor, target.line);
         }
+    }
+
+    private static void positionInMetadataEditor(IWorkbenchWindow window, IEditorPart editor, NavigationTarget target) {
+        if (editor == null) {
+            return;
+        }
+
+        try {
+            // Retrieve root model EObject
+            Object model = null;
+            try {
+                java.lang.reflect.Method getModelMethod = editor.getClass().getMethod("getModel");
+                model = getModelMethod.invoke(editor);
+            } catch (Throwable t) {
+                NavigatorPlugin.logInfo("editor.getModel reflection failed: " + t.getMessage());
+            }
+
+            if (model == null) {
+                NavigatorPlugin.logInfo("No model found in editor: " + editor.getClass().getName());
+                return;
+            }
+
+            // Case 1: Specific attribute/element requested
+            if (target != null && target.attr != null && !target.attr.isBlank()) {
+                String attrName = target.attr.trim();
+                NavigatorPlugin.logInfo("Searching for attribute/element '" + attrName + "' in model " + model);
+                Object targetChild = findChildElementInModel(model, attrName);
+
+                if (targetChild != null) {
+                    NavigatorPlugin.logInfo("Found target element: " + targetChild);
+                    IStructuredSelection selection = new StructuredSelection(targetChild);
+                    selectInEditor(editor, selection);
+                    revealInNavigatorView(window, selection);
+
+                    // Re-dispatch on next UI loop tick to ensure lazy-initialized pages/controls reflect selection
+                    Display display = Display.getCurrent();
+                    if (display != null && !display.isDisposed()) {
+                        display.asyncExec(() -> {
+                            selectInEditor(editor, selection);
+                            revealInNavigatorView(window, selection);
+                        });
+                    }
+                    return;
+                } else {
+                    NavigatorPlugin.logError("Element '" + attrName + "' not found in model", null);
+                }
+            }
+
+            // Case 2: No specific attribute - reveal the root model object in EDT Navigator view
+            IStructuredSelection selection = new StructuredSelection(model);
+            revealInNavigatorView(window, selection);
+
+        } catch (Throwable t) {
+            NavigatorPlugin.logError("Error in positionInMetadataEditor", t);
+        }
+    }
+
+    private static void selectInEditor(IEditorPart editor, ISelection selection) {
+        if (editor == null || selection == null) return;
+
+        boolean ok = false;
+        try {
+            java.lang.reflect.Method m = editor.getClass().getMethod("gotoSelection", ISelection.class);
+            m.invoke(editor, selection);
+            ok = true;
+            NavigatorPlugin.logInfo("Invoked editor.gotoSelection successfully");
+        } catch (Throwable ignored) {}
+
+        if (!ok) {
+            try {
+                java.lang.reflect.Method m = editor.getClass().getMethod("selectReveal", ISelection.class);
+                m.invoke(editor, selection);
+                NavigatorPlugin.logInfo("Invoked editor.selectReveal successfully");
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    private static void revealInNavigatorView(IWorkbenchWindow window, ISelection selection) {
+        if (window == null || selection == null) return;
+        try {
+            org.osgi.framework.Bundle navBundle = org.eclipse.core.runtime.Platform.getBundle("com._1c.g5.v8.dt.navigator");
+            if (navBundle != null) {
+                Class<?> absNavClass = navBundle.loadClass("com._1c.g5.v8.dt.navigator.AbstractDtNavigator");
+                java.lang.reflect.Method getNav = absNavClass.getMethod("getNavigator", IWorkbenchWindow.class);
+                Object navigator = getNav.invoke(null, window);
+                if (navigator != null) {
+                    java.lang.reflect.Method selectReveal = navigator.getClass().getMethod("selectReveal", ISelection.class);
+                    selectReveal.invoke(navigator, selection);
+                    NavigatorPlugin.logInfo("Revealed selection in EDT Navigator view");
+                }
+            }
+        } catch (Throwable t) {
+            NavigatorPlugin.logInfo("revealInNavigatorView failed: " + t.getMessage());
+        }
+    }
+
+    private static Object findChildElementInModel(Object model, String attrName) {
+        if (model == null || attrName == null || attrName.isBlank()) return null;
+
+        String cleanAttr = attrName.trim();
+        String targetName;
+        String parentName = null;
+        if (cleanAttr.contains(".")) {
+            String[] parts = cleanAttr.split("\\.");
+            targetName = parts[parts.length - 1].trim();
+            if (parts.length > 1) {
+                parentName = parts[parts.length - 2].trim();
+            }
+        } else {
+            targetName = cleanAttr;
+        }
+
+        List<Object> candidates = new ArrayList<>();
+
+        // 1. Search via eAllContents()
+        try {
+            java.lang.reflect.Method eAllContentsMethod = model.getClass().getMethod("eAllContents");
+            Object iteratorObj = eAllContentsMethod.invoke(model);
+            if (iteratorObj instanceof java.util.Iterator) {
+                java.util.Iterator<?> it = (java.util.Iterator<?>) iteratorObj;
+                while (it.hasNext()) {
+                    Object child = it.next();
+                    if (child != null) {
+                        String name = getElementName(child);
+                        if (targetName.equalsIgnoreCase(name)) {
+                            candidates.add(child);
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        // 2. Search all getter methods returning List or EList (e.g. getStandardAttributes)
+        if (candidates.isEmpty()) {
+            for (java.lang.reflect.Method method : model.getClass().getMethods()) {
+                if (method.getName().startsWith("get") && method.getParameterCount() == 0) {
+                    try {
+                        Class<?> retType = method.getReturnType();
+                        if (java.util.List.class.isAssignableFrom(retType)) {
+                            Object listObj = method.invoke(model);
+                            if (listObj instanceof java.util.List) {
+                                for (Object item : (java.util.List<?>) listObj) {
+                                    if (item != null) {
+                                        String name = getElementName(item);
+                                        if (targetName.equalsIgnoreCase(name)) {
+                                            candidates.add(item);
+                                        }
+                                    }
+                                }
+                            }
+                        } else if (retType != null && !retType.isPrimitive() && !retType.getName().startsWith("java.lang.")) {
+                            Object singleObj = method.invoke(model);
+                            if (singleObj != null) {
+                                String name = getElementName(singleObj);
+                                if (targetName.equalsIgnoreCase(name)) {
+                                    candidates.add(singleObj);
+                                }
+                            }
+                        }
+                    } catch (Throwable ignored) {}
+                }
+            }
+        }
+
+        if (candidates.isEmpty()) {
+            return null;
+        }
+
+        if (candidates.size() == 1 || parentName == null) {
+            return candidates.get(0);
+        }
+
+        // Filter by parent container name if specified
+        for (Object cand : candidates) {
+            try {
+                java.lang.reflect.Method eContainerMethod = cand.getClass().getMethod("eContainer");
+                Object parent = eContainerMethod.invoke(cand);
+                if (parent != null) {
+                    String pName = getElementName(parent);
+                    if (parentName.equalsIgnoreCase(pName)) {
+                        return cand;
+                    }
+                }
+            } catch (Throwable ignored) {}
+        }
+
+        return candidates.get(0);
+    }
+
+    private static String getElementName(Object obj) {
+        if (obj == null) return null;
+        try {
+            java.lang.reflect.Method m = obj.getClass().getMethod("getName");
+            Object name = m.invoke(obj);
+            if (name != null) return name.toString();
+        } catch (Throwable ignored) {}
+
+        try {
+            java.lang.reflect.Method eClassMethod = obj.getClass().getMethod("eClass");
+            Object eClass = eClassMethod.invoke(obj);
+            if (eClass != null) {
+                java.lang.reflect.Method getFeatureMethod = eClass.getClass().getMethod("getEStructuralFeature", String.class);
+                Object sf = getFeatureMethod.invoke(eClass, "name");
+                if (sf != null) {
+                    java.lang.reflect.Method eGetMethod = obj.getClass().getMethod("eGet", sf.getClass().getInterfaces()[0]);
+                    Object val = eGetMethod.invoke(obj, sf);
+                    if (val != null) return val.toString();
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        return null;
     }
 
     private static int indexOfIgnoreCase(String source, String target) {

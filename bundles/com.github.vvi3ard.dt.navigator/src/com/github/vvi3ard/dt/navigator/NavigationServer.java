@@ -248,6 +248,24 @@ public class NavigationServer {
         if (params.containsKey("md")) target.md = params.get("md");
         if (params.containsKey("method")) target.method = params.get("method");
         if (params.containsKey("attr")) target.attr = params.get("attr");
+        if (target.attr == null && params.containsKey("form")) target.attr = params.get("form");
+        if (target.attr == null && params.containsKey("template")) target.attr = params.get("template");
+        if (target.attr == null && params.containsKey("command")) target.attr = params.get("command");
+
+        // If attr was not explicitly passed, check if md contains attribute part (e.g. Справочник.Пользователи.ИдентификаторПользователяИБ)
+        if ((target.attr == null || target.attr.isBlank()) && target.md != null) {
+            String[] parts = target.md.split("\\.");
+            if (parts.length == 3) {
+                target.attr = parts[2].trim();
+            } else if (parts.length >= 4) {
+                String p2 = parts[2].trim().toLowerCase(java.util.Locale.ROOT);
+                if (p2.startsWith("реквизит") || p2.startsWith("attribute") || p2.startsWith("табличнаячасть") || p2.startsWith("tabularsection")) {
+                    target.attr = parts[3].trim();
+                } else {
+                    target.attr = parts[2].trim() + "." + parts[3].trim();
+                }
+            }
+        }
         if (params.containsKey("search")) target.search = params.get("search");
 
         if (params.containsKey("line")) {
