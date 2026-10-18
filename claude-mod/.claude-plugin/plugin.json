@@ -1,0 +1,6 @@
+{
+  "name": "edt-links",
+  "version": "0.2.0",
+  "description": "Clicking an EDT URL Navigator link (127.0.0.1:18321) in a reply opens the 1C object in EDT without opening a browser",
+  "author": { "name": "vvi3ard" }
+}

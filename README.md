@@ -71,9 +71,27 @@
 
 ---
 
-## 🧠 Обучение LLM (Системный промпт)
+## 🧩 Мод для Claude Code (`edt-links`)
 
-Чтобы ваш ИИ-ассистент (Gemini, Claude, Cursor, Copilot) всегда приводил ссылки на исходный код в удобном формате, добавьте содержимое [docs/LLM-SETUP-PROMPT.md](docs/LLM-SETUP-PROMPT.md) в свои глобальные правила (например, `GEMINI.md`, `CLAUDE.md`, `.cursorrules` или Custom Instructions).
+Для пользователей **Claude Code** (терминал и Claude Desktop) в репозитории опубликован плагин-мод `edt-links`. По клику на ссылку `([EDT](http://127.0.0.1:18321/open?...))` он отправляет запрос в EDT напрямую через `curl` **без открытия вкладки браузера**.
+
+### Установка мода:
+
+- **В интерактивном режиме Claude Code:**
+  ```text
+  /plugin install edt-links --marketplace VVi3ard/edt-url-navigator
+  ```
+- **Из командной строки:**
+  ```bash
+  claude plugin install edt-links --marketplace VVi3ard/edt-url-navigator
+  ```
+- **В приложении Claude Desktop:**
+  Нажмите **+** рядом с полем ввода → **Plugins** → **Add marketplace** → укажите `VVi3ard/edt-url-navigator` → выберите **Add plugin**.
+
+### 📋 Готовые инструкции для настройки ассистентов:
+- [SETUP-CLAUDE-CODE.md](SETUP-CLAUDE-CODE.md) — отправьте промпт в Claude Code: он сам установит мод `edt-links` и добавит правила оформления ссылок в ваш `CLAUDE.md`.
+- [SETUP-OTHER-AGENTS.md](SETUP-OTHER-AGENTS.md) — настройка для остальных агентов (Codex, Cursor, GitHub Copilot, Gemini CLI). Ссылки открываются через локальный HTTP-шлюз, а открытая вкладка браузера автоматически закрывается страницей плагина 1.1.0 (`window.close()`).
+- [docs/LLM-LINKS-GUIDELINE.md](docs/LLM-LINKS-GUIDELINE.md) — полная спецификация синтаксиса ссылок (модули, методы, строки, метаданные и реквизиты).
 
 ---
 

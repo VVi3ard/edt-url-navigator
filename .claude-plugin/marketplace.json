@@ -1,0 +1,6 @@
+{
+  "name": "edt-url-navigator",
+  "owner": { "name": "vvi3ard" },
+  "description": "Claude Code add-ons for the 1C:EDT URL Navigator plugin",
+  "plugins": [{ "name": "edt-links", "source": "./claude-mod" }]
+}
