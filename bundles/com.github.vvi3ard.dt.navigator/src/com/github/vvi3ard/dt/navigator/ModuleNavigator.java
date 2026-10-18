@@ -148,16 +148,7 @@ public final class ModuleNavigator {
     private static IEditorPart openWithEdtHelper(IWorkbenchPage page, IFile iFile, NavigationTarget target) {
         boolean isMdo = iFile.getName().toLowerCase(Locale.ROOT).endsWith(".mdo");
 
-        // If attribute is requested, always open as text/XML editor to position and reveal <name>attr</name>
-        if (isMdo && target != null && target.attr != null && !target.attr.isBlank()) {
-            try {
-                return IDE.openEditor(page, iFile, "org.eclipse.ui.DefaultTextEditor", true);
-            } catch (Exception e) {
-                NavigatorPlugin.logError("Failed to open DefaultTextEditor for " + iFile, e);
-            }
-        }
-
-        // Try EDT OpenHelper first (opens modules as 1C model with ASPU.ОбщийМодуль.X.Модуль, procedure list, directives, etc.)
+        // Try EDT OpenHelper first (opens modules and metadata objects as 1C model with full visual editor)
         try {
             org.osgi.framework.Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("com._1c.g5.v8.dt.ui");
             if (bundle != null) {
@@ -190,16 +181,7 @@ public final class ModuleNavigator {
     }
 
     private static IEditorPart openMetadataEditor(IWorkbenchPage page, IFile iFile, NavigationTarget target) {
-        // If attribute is requested, always open as text/XML editor to position and reveal <name>attr</name>
-        if (target != null && target.attr != null && !target.attr.isBlank()) {
-            try {
-                return IDE.openEditor(page, iFile, "org.eclipse.ui.DefaultTextEditor", true);
-            } catch (Exception e) {
-                NavigatorPlugin.logError("Failed to open DefaultTextEditor for " + iFile, e);
-            }
-        }
-
-        // If target is metadata object without attr, try EDT specific editor for container
+        // Try EDT specific editor for container
         String editorId = getEdtMetadataEditorId(target);
         if (editorId != null) {
             try {
