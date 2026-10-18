@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature id="com.github.vvi3ard.dt.navigator.feature.source" version="1.4.1.v20261018220705" label="%featureName" provider-name="%providerName">
+  <description url="">
+      1C:EDT URL Navigator - Быстрая навигация в модули 1C:EDT по ссылкам вида edt://open?module=...
+   </description>
+  <copyright url="">
+      vvi3ard
+   </copyright>
+  <includes id="com.github.vvi3ard.dt.navigator.feature" version="1.4.1.v20261018220705"/>
+  <plugin id="com.github.vvi3ard.dt.navigator.source" version="1.4.1.v20261018220705" download-size="0" install-size="0" unpack="false"/>
+</feature>
