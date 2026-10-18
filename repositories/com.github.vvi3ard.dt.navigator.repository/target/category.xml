@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<site>
-   <feature id="com.github.vvi3ard.dt.navigator.feature">
-      <category name="com.github.vvi3ard.dt.navigator.category"/>
-   </feature>
-   <category-def name="com.github.vvi3ard.dt.navigator.category" label="1C:EDT URL Navigator"/>
-</site>
