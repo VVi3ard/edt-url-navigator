@@ -6,7 +6,7 @@
 
   <groupId>com.github.vvi3ard.dt.navigator</groupId>
   <artifactId>bom</artifactId>
-  <version>1.4.1-SNAPSHOT</version>
+  <version>1.4.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>1C:EDT URL Navigator - BOM</name>

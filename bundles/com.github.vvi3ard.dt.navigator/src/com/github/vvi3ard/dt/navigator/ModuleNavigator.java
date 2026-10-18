@@ -839,9 +839,63 @@ public final class ModuleNavigator {
             targetName = cleanAttr;
         }
 
-        List<Object> candidates = new ArrayList<>();
+        // 1. Prioritized search in standard metadata collections (returns true MdObject instances, not internal mcore fields)
+        String[] directGetters = new String[] {
+            "getAttributes",
+            "getStandardAttributes",
+            "getDimensions",
+            "getResources",
+            "getTabularSections",
+            "getForms",
+            "getCommands",
+            "getTemplates",
+            "getAccountingFlags",
+            "getExtDimensionAccountingFlags"
+        };
 
-        // 1. Search via eAllContents()
+        for (String getterName : directGetters) {
+            try {
+                java.lang.reflect.Method m = model.getClass().getMethod(getterName);
+                Object res = m.invoke(model);
+                if (res instanceof java.util.List) {
+                    for (Object item : (java.util.List<?>) res) {
+                        if (item == null) continue;
+                        String name = getElementName(item);
+
+                        // If item is a tabular section, check if parent matches or search inside its attributes
+                        if ("getTabularSections".equals(getterName)) {
+                            boolean parentMatches = (parentName == null || parentName.equalsIgnoreCase(name));
+                            try {
+                                java.lang.reflect.Method tsAttrsMethod = item.getClass().getMethod("getAttributes");
+                                Object tsAttrs = tsAttrsMethod.invoke(item);
+                                if (tsAttrs instanceof java.util.List) {
+                                    for (Object tsAttr : (java.util.List<?>) tsAttrs) {
+                                        if (tsAttr == null) continue;
+                                        String tsAttrName = getElementName(tsAttr);
+                                        if (targetName.equalsIgnoreCase(tsAttrName)) {
+                                            if (parentMatches) {
+                                                return unwrapElement(tsAttr);
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (Throwable ignored) {}
+
+                            if (targetName.equalsIgnoreCase(name)) {
+                                return unwrapElement(item);
+                            }
+                        } else {
+                            if (targetName.equalsIgnoreCase(name)) {
+                                return unwrapElement(item);
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {}
+        }
+
+        // 2. Fallback search via eAllContents() with unwrapping and mdclass priority
+        List<Object> candidates = new ArrayList<>();
         try {
             java.lang.reflect.Method eAllContentsMethod = model.getClass().getMethod("eAllContents");
             Object iteratorObj = eAllContentsMethod.invoke(model);
@@ -850,70 +904,59 @@ public final class ModuleNavigator {
                 while (it.hasNext()) {
                     Object child = it.next();
                     if (child != null) {
-                        String name = getElementName(child);
+                        Object unwrapped = unwrapElement(child);
+                        String name = getElementName(unwrapped);
                         if (targetName.equalsIgnoreCase(name)) {
-                            candidates.add(child);
+                            candidates.add(unwrapped);
                         }
                     }
                 }
             }
         } catch (Throwable ignored) {}
 
-        // 2. Search all getter methods returning List or EList (e.g. getStandardAttributes)
-        if (candidates.isEmpty()) {
-            for (java.lang.reflect.Method method : model.getClass().getMethods()) {
-                if (method.getName().startsWith("get") && method.getParameterCount() == 0) {
-                    try {
-                        Class<?> retType = method.getReturnType();
-                        if (java.util.List.class.isAssignableFrom(retType)) {
-                            Object listObj = method.invoke(model);
-                            if (listObj instanceof java.util.List) {
-                                for (Object item : (java.util.List<?>) listObj) {
-                                    if (item != null) {
-                                        String name = getElementName(item);
-                                        if (targetName.equalsIgnoreCase(name)) {
-                                            candidates.add(item);
-                                        }
-                                    }
-                                }
-                            }
-                        } else if (retType != null && !retType.isPrimitive() && !retType.getName().startsWith("java.lang.")) {
-                            Object singleObj = method.invoke(model);
-                            if (singleObj != null) {
-                                String name = getElementName(singleObj);
-                                if (targetName.equalsIgnoreCase(name)) {
-                                    candidates.add(singleObj);
-                                }
-                            }
-                        }
-                    } catch (Throwable ignored) {}
-                }
-            }
-        }
-
         if (candidates.isEmpty()) {
             return null;
         }
 
-        if (candidates.size() == 1 || parentName == null) {
-            return candidates.get(0);
-        }
+        // Sort candidates: prefer com._1c.g5.v8.dt.metadata.mdclass over internal mcore objects
+        candidates.sort((o1, o2) -> {
+            boolean isMd1 = o1.getClass().getName().contains(".metadata.mdclass.");
+            boolean isMd2 = o2.getClass().getName().contains(".metadata.mdclass.");
+            if (isMd1 != isMd2) return isMd1 ? -1 : 1;
+            boolean isMcore1 = o1.getClass().getName().contains(".mcore.");
+            boolean isMcore2 = o2.getClass().getName().contains(".mcore.");
+            if (isMcore1 != isMcore2) return isMcore1 ? 1 : -1;
+            return 0;
+        });
 
-        // Filter by parent container name if specified
-        for (Object cand : candidates) {
-            try {
-                java.lang.reflect.Method eContainerMethod = cand.getClass().getMethod("eContainer");
-                Object parent = eContainerMethod.invoke(cand);
-                if (parent != null) {
-                    String pName = getElementName(parent);
-                    if (parentName.equalsIgnoreCase(pName)) {
-                        return cand;
+        if (parentName != null) {
+            for (Object cand : candidates) {
+                try {
+                    java.lang.reflect.Method eContainerMethod = cand.getClass().getMethod("eContainer");
+                    Object parent = eContainerMethod.invoke(cand);
+                    if (parent != null) {
+                        String pName = getElementName(parent);
+                        if (parentName.equalsIgnoreCase(pName)) {
+                            return cand;
+                        }
                     }
-                }
-            } catch (Throwable ignored) {}
+                } catch (Throwable ignored) {}
+            }
         }
 
         return candidates.get(0);
+    }
+
+    private static Object unwrapElement(Object obj) {
+        if (obj == null) return null;
+        try {
+            java.lang.reflect.Method getSourceMethod = obj.getClass().getMethod("getSource");
+            Object src = getSourceMethod.invoke(obj);
+            if (src != null) {
+                return src;
+            }
+        } catch (Throwable ignored) {}
+        return obj;
     }
 
     private static String getElementName(Object obj) {

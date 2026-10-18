@@ -2,7 +2,7 @@
 <feature
       id="com.github.vvi3ard.dt.navigator.feature"
       label="%featureName"
-      version="1.4.1.qualifier"
+      version="1.4.2.qualifier"
       provider-name="%providerName">
 
    <description url="">
