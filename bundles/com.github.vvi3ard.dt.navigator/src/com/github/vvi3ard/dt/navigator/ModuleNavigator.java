@@ -98,16 +98,32 @@ public final class ModuleNavigator {
             IEditorPart editor = null;
             IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
             IFile[] iFiles = root.findFilesForLocationURI(resolvedFile.toURI());
+            IFile iFile = (iFiles != null && iFiles.length > 0 && iFiles[0].exists()) ? iFiles[0] : null;
+
+            if (iFile == null) {
+                // Robust fallback search across workspace projects
+                String resolvedPath = resolvedFile.getAbsolutePath().replace('\\', '/');
+                for (IProject project : root.getProjects()) {
+                    if (!project.isAccessible()) continue;
+                    IPath projectLoc = project.getLocation();
+                    if (projectLoc == null) continue;
+                    String projPath = projectLoc.toFile().getAbsolutePath().replace('\\', '/');
+                    if (resolvedPath.toLowerCase(Locale.ROOT).startsWith(projPath.toLowerCase(Locale.ROOT))) {
+                        String rel = resolvedPath.substring(projPath.length());
+                        if (rel.startsWith("/")) rel = rel.substring(1);
+                        IFile candidate = project.getFile(rel);
+                        if (candidate.exists()) {
+                            iFile = candidate;
+                            break;
+                        }
+                    }
+                }
+            }
 
             boolean isMdo = resolvedFile.getName().toLowerCase(Locale.ROOT).endsWith(".mdo");
 
-            if (iFiles != null && iFiles.length > 0 && iFiles[0].exists()) {
-                IFile iFile = iFiles[0];
-                if (isMdo) {
-                    editor = openMetadataEditor(page, iFile, target);
-                } else {
-                    editor = IDE.openEditor(page, iFile, true);
-                }
+            if (iFile != null && iFile.exists()) {
+                editor = openWithEdtHelper(page, iFile, target);
             } else {
                 IFileStore fileStore = EFS.getStore(resolvedFile.toURI());
                 if (isMdo) {
@@ -126,6 +142,50 @@ public final class ModuleNavigator {
         } catch (Exception e) {
             NavigatorPlugin.logError("Error opening editor for: " + resolvedFile, e);
             return false;
+        }
+    }
+
+    private static IEditorPart openWithEdtHelper(IWorkbenchPage page, IFile iFile, NavigationTarget target) {
+        boolean isMdo = iFile.getName().toLowerCase(Locale.ROOT).endsWith(".mdo");
+
+        // If attribute is requested, always open as text/XML editor to position and reveal <name>attr</name>
+        if (isMdo && target != null && target.attr != null && !target.attr.isBlank()) {
+            try {
+                return IDE.openEditor(page, iFile, "org.eclipse.ui.DefaultTextEditor", true);
+            } catch (Exception e) {
+                NavigatorPlugin.logError("Failed to open DefaultTextEditor for " + iFile, e);
+            }
+        }
+
+        // Try EDT OpenHelper first (opens modules as 1C model with ASPU.ОбщийМодуль.X.Модуль, procedure list, directives, etc.)
+        try {
+            org.osgi.framework.Bundle bundle = org.eclipse.core.runtime.Platform.getBundle("com._1c.g5.v8.dt.ui");
+            if (bundle != null) {
+                Class<?> helperClass = bundle.loadClass("com._1c.g5.v8.dt.ui.util.OpenHelper");
+                java.lang.reflect.Constructor<?> ctor = helperClass.getConstructor(IWorkbenchPage.class);
+                Object helper = ctor.newInstance(page);
+                java.lang.reflect.Method openMethod = helperClass.getMethod("openEditor", IFile.class, org.eclipse.jface.viewers.ISelection.class);
+                Object result = openMethod.invoke(helper, iFile, null);
+                if (result instanceof IEditorPart) {
+                    NavigatorPlugin.logInfo("Successfully opened editor with EDT OpenHelper for " + iFile.getFullPath());
+                    return (IEditorPart) result;
+                }
+            }
+        } catch (Throwable t) {
+            NavigatorPlugin.logInfo("OpenHelper reflection failed or not available, falling back: " + t.getMessage());
+        }
+
+        // Fallback for .mdo if OpenHelper failed
+        if (isMdo) {
+            return openMetadataEditor(page, iFile, target);
+        }
+
+        // Standard fallback
+        try {
+            return IDE.openEditor(page, iFile, true);
+        } catch (Exception e) {
+            NavigatorPlugin.logError("IDE.openEditor fallback failed for " + iFile, e);
+            return null;
         }
     }
 
