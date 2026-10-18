@@ -1,0 +1,142 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<units size='4'>
+  <unit id='com.github.vvi3ard.dt.navigator.feature.feature.jar' version='1.4.2.v20261018221705'>
+    <properties size='10'>
+      <property name='org.eclipse.equinox.p2.name' value='%featureName'/>
+      <property name='org.eclipse.equinox.p2.description' value='1C:EDT URL Navigator - Быстрая навигация в модули 1C:EDT по ссылкам вида edt://open?module=...'/>
+      <property name='org.eclipse.equinox.p2.description.url' value=''/>
+      <property name='org.eclipse.equinox.p2.provider' value='%providerName'/>
+      <property name='df_LT.featureName' value='1C:EDT URL Navigator Feature'/>
+      <property name='df_LT.providerName' value='vvi3ard'/>
+      <property name='maven-groupId' value='com.github.vvi3ard.dt.navigator'/>
+      <property name='maven-artifactId' value='com.github.vvi3ard.dt.navigator.feature'/>
+      <property name='maven-version' value='1.4.2-SNAPSHOT'/>
+      <property name='maven-type' value='eclipse-feature'/>
+    </properties>
+    <provides size='3'>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='com.github.vvi3ard.dt.navigator.feature.feature.jar' version='1.4.2.v20261018221705'/>
+      <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='feature' version='1.0.0'/>
+      <provided namespace='org.eclipse.update.feature' name='com.github.vvi3ard.dt.navigator.feature' version='1.4.2.v20261018221705'/>
+    </provides>
+    <filter>
+      (org.eclipse.update.install.features=true)
+    </filter>
+    <artifacts size='1'>
+      <artifact classifier='org.eclipse.update.feature' id='com.github.vvi3ard.dt.navigator.feature' version='1.4.2.v20261018221705'/>
+    </artifacts>
+    <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+    <touchpointData size='1'>
+      <instructions size='1'>
+        <instruction key='zipped'>
+          true
+        </instruction>
+      </instructions>
+    </touchpointData>
+    <copyright uri='' url=''>
+      vvi3ard
+    </copyright>
+  </unit>
+  <unit id='com.github.vvi3ard.dt.navigator.feature.feature.group' version='1.4.2.v20261018221705' singleton='false'>
+    <update id='com.github.vvi3ard.dt.navigator.feature.feature.group' range='[0.0.0,1.4.2.v20261018221705)' severity='0'/>
+    <properties size='11'>
+      <property name='org.eclipse.equinox.p2.name' value='%featureName'/>
+      <property name='org.eclipse.equinox.p2.description' value='1C:EDT URL Navigator - Быстрая навигация в модули 1C:EDT по ссылкам вида edt://open?module=...'/>
+      <property name='org.eclipse.equinox.p2.description.url' value=''/>
+      <property name='org.eclipse.equinox.p2.provider' value='%providerName'/>
+      <property name='org.eclipse.equinox.p2.type.group' value='true'/>
+      <property name='maven-groupId' value='com.github.vvi3ard.dt.navigator'/>
+      <property name='maven-artifactId' value='com.github.vvi3ard.dt.navigator.feature'/>
+      <property name='maven-version' value='1.4.2-SNAPSHOT'/>
+      <property name='maven-type' value='eclipse-feature'/>
+      <property name='df_LT.featureName' value='1C:EDT URL Navigator Feature'/>
+      <property name='df_LT.providerName' value='vvi3ard'/>
+    </properties>
+    <provides size='2'>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='com.github.vvi3ard.dt.navigator.feature.feature.group' version='1.4.2.v20261018221705'/>
+      <provided namespace='org.eclipse.equinox.p2.localization' name='df_LT' version='1.0.0'/>
+    </provides>
+    <requires size='2'>
+      <required namespace='org.eclipse.equinox.p2.iu' name='com.github.vvi3ard.dt.navigator' range='[1.4.2.v20261018221705,1.4.2.v20261018221705]'/>
+      <required namespace='org.eclipse.equinox.p2.iu' name='com.github.vvi3ard.dt.navigator.feature.feature.jar' range='[1.4.2.v20261018221705,1.4.2.v20261018221705]'>
+        <filter>
+          (org.eclipse.update.install.features=true)
+        </filter>
+      </required>
+    </requires>
+    <touchpoint id='null' version='0.0.0'/>
+    <copyright uri='' url=''>
+      vvi3ard
+    </copyright>
+  </unit>
+  <unit id='com.github.vvi3ard.dt.navigator.feature.source.feature.group' version='1.4.2.v20261018221705' singleton='false'>
+    <update id='com.github.vvi3ard.dt.navigator.feature.source.feature.group' range='[0.0.0,1.4.2.v20261018221705)' severity='0'/>
+    <properties size='12'>
+      <property name='org.eclipse.equinox.p2.name' value='%featureName'/>
+      <property name='org.eclipse.equinox.p2.description' value='1C:EDT URL Navigator - Быстрая навигация в модули 1C:EDT по ссылкам вида edt://open?module=...'/>
+      <property name='org.eclipse.equinox.p2.description.url' value=''/>
+      <property name='org.eclipse.equinox.p2.provider' value='%providerName'/>
+      <property name='org.eclipse.equinox.p2.type.group' value='true'/>
+      <property name='maven-groupId' value='com.github.vvi3ard.dt.navigator'/>
+      <property name='maven-artifactId' value='com.github.vvi3ard.dt.navigator.feature'/>
+      <property name='maven-version' value='1.4.2-SNAPSHOT'/>
+      <property name='maven-classifier' value='sources-feature'/>
+      <property name='maven-type' value='eclipse-feature'/>
+      <property name='df_LT.featureName' value='1C:EDT URL Navigator Feature Developer Resources'/>
+      <property name='df_LT.providerName' value='vvi3ard'/>
+    </properties>
+    <provides size='2'>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='com.github.vvi3ard.dt.navigator.feature.source.feature.group' version='1.4.2.v20261018221705'/>
+      <provided namespace='org.eclipse.equinox.p2.localization' name='df_LT' version='1.0.0'/>
+    </provides>
+    <requires size='3'>
+      <required namespace='org.eclipse.equinox.p2.iu' name='com.github.vvi3ard.dt.navigator.feature.feature.group' range='[1.4.2.v20261018221705,1.4.2.v20261018221705]'/>
+      <required namespace='org.eclipse.equinox.p2.iu' name='com.github.vvi3ard.dt.navigator.source' range='[1.4.2.v20261018221705,1.4.2.v20261018221705]'/>
+      <required namespace='org.eclipse.equinox.p2.iu' name='com.github.vvi3ard.dt.navigator.feature.source.feature.jar' range='[1.4.2.v20261018221705,1.4.2.v20261018221705]'>
+        <filter>
+          (org.eclipse.update.install.features=true)
+        </filter>
+      </required>
+    </requires>
+    <touchpoint id='null' version='0.0.0'/>
+    <copyright uri='' url=''>
+      vvi3ard
+    </copyright>
+  </unit>
+  <unit id='com.github.vvi3ard.dt.navigator.feature.source.feature.jar' version='1.4.2.v20261018221705'>
+    <properties size='11'>
+      <property name='org.eclipse.equinox.p2.name' value='%featureName'/>
+      <property name='org.eclipse.equinox.p2.description' value='1C:EDT URL Navigator - Быстрая навигация в модули 1C:EDT по ссылкам вида edt://open?module=...'/>
+      <property name='org.eclipse.equinox.p2.description.url' value=''/>
+      <property name='org.eclipse.equinox.p2.provider' value='%providerName'/>
+      <property name='df_LT.featureName' value='1C:EDT URL Navigator Feature Developer Resources'/>
+      <property name='df_LT.providerName' value='vvi3ard'/>
+      <property name='maven-groupId' value='com.github.vvi3ard.dt.navigator'/>
+      <property name='maven-artifactId' value='com.github.vvi3ard.dt.navigator.feature'/>
+      <property name='maven-version' value='1.4.2-SNAPSHOT'/>
+      <property name='maven-classifier' value='sources-feature'/>
+      <property name='maven-type' value='eclipse-feature'/>
+    </properties>
+    <provides size='3'>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='com.github.vvi3ard.dt.navigator.feature.source.feature.jar' version='1.4.2.v20261018221705'/>
+      <provided namespace='org.eclipse.equinox.p2.eclipse.type' name='feature' version='1.0.0'/>
+      <provided namespace='org.eclipse.update.feature' name='com.github.vvi3ard.dt.navigator.feature.source' version='1.4.2.v20261018221705'/>
+    </provides>
+    <filter>
+      (org.eclipse.update.install.features=true)
+    </filter>
+    <artifacts size='1'>
+      <artifact classifier='org.eclipse.update.feature' id='com.github.vvi3ard.dt.navigator.feature.source' version='1.4.2.v20261018221705'/>
+    </artifacts>
+    <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
+    <touchpointData size='1'>
+      <instructions size='1'>
+        <instruction key='zipped'>
+          true
+        </instruction>
+      </instructions>
+    </touchpointData>
+    <copyright uri='' url=''>
+      vvi3ard
+    </copyright>
+  </unit>
+</units>
